@@ -1,0 +1,3 @@
+﻿-keepclasseswithmembernames class * { native <methods>; }
+-keep class com.nucleo.ia.core.NativeBridge { *; }
+-dontwarn org.jetbrains.annotations.**
