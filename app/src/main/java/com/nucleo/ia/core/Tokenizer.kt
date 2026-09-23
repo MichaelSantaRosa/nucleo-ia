@@ -8,9 +8,9 @@ object Tokenizer {
         for (c in 'a'..'z') put(c, (c - 'a' + 1))
         for (c in '0'..'9') put(c, (c - '0' + 27))
         put(' ', 37); put('.', 38); put(',', 39); put('?', 40); put('!', 41)
-        put("á", 42); put("â", 43); put("ã", 44); put("à", 45)
-        put("é", 46); put("ê", 47); put("í", 48); put("ó", 49)
-        put("ô", 50); put("õ", 51); put("ú", 52); put("ç", 53)
+        put('á', 42); put('â', 43); put('ã', 44); put('à', 45)
+        put('é', 46); put('ê', 47); put('í', 48); put('ó', 49)
+        put('ô', 50); put('õ', 51); put('ú', 52); put('ç', 53)
     }
 
     // ~2000 palavras mais frequentes do PT-BR + técnico + apps + gírias
