@@ -11,10 +11,57 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.nucleo.ia.core.ExperienceStore
 import com.nucleo.ia.core.IaEngine
-import com.nucleo.ia.core.ReinforcementLearner
 import com.nucleo.ia.services.InternetManager
+
+private data class Message(
+    val text: String,
+    val isUser: Boolean,
+    val intentId: Int
+)
+
+private class MessageAdapter(
+    private val onFeedback: (Int, Boolean) -> Unit
+) : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
+
+    val messages = mutableListOf<Message>()
+
+    fun addMessage(text: String, isUser: Boolean, intentId: Int) {
+        messages.add(Message(text, isUser, intentId))
+        notifyItemInserted(messages.lastIndex)
+    }
+
+    override fun getItemCount(): Int = messages.size
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_msg, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val message = messages[position]
+        holder.tvText.text = message.text
+        holder.container.setBackgroundResource(
+            if (message.isUser) R.drawable.bg_user else R.drawable.bg_bot
+        )
+        holder.btnGood.setOnClickListener {
+            val pos = holder.adapterPosition
+            if (pos != RecyclerView.NO_POSITION) onFeedback(pos, true)
+        }
+        holder.btnBad.setOnClickListener {
+            val pos = holder.adapterPosition
+            if (pos != RecyclerView.NO_POSITION) onFeedback(pos, false)
+        }
+    }
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val container: View = view.findViewById(R.id.msgContainer)
+        val tvText: TextView = view.findViewById(R.id.tvText)
+        val btnGood: Button = view.findViewById(R.id.btnGood)
+        val btnBad: Button = view.findViewById(R.id.btnBad)
+    }
+}
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tvStatus)
         tvStats = findViewById(R.id.tvStats)
         recycler = findViewById(R.id.recycler)
-        adapter = MessageAdapter()
+        adapter = MessageAdapter(::onFeedback)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
@@ -82,9 +129,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onFeedback(position: Int, good: Boolean) {
-        val m = adapter.messages[position]
-        if (m.intentId < 0) return
-        engine.feedback(m.text, m.intentId, good)
+        if (position !in adapter.messages.indices) return
+        val message = adapter.messages[position]
+        if (message.intentId < 0) return
+        engine.feedback(message.text, message.intentId, good)
         updateStats()
     }
 
@@ -114,37 +162,5 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engine.destroy()
-    }
-
-    inner class MessageAdapter : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
-        data class Msg(val text: String, val isUser: Boolean, val intentId: Int)
-        val messages = mutableListOf<Msg>()
-
-        fun addMessage(text: String, isUser: Boolean, intentId: Int) {
-            messages.add(Msg(text, isUser, intentId))
-            notifyItemInserted(messages.size - 1)
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val v = LayoutInflater.from(parent.context).inflate(R.layout.item_msg, parent, false)
-            return ViewHolder(v)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val m = messages[position]
-            holder.tvText.text = m.text
-            holder.container.setBackgroundResource(
-                if (m.isUser) R.drawable.bg_user else R.drawable.bg_bot
-            )
-            holder.btnGood.setOnClickListener { onFeedback(holder.bindingAdapterPosition, true) }
-            holder.btnBad.setOnClickListener { onFeedback(holder.bindingAdapterPosition, false) }
-        }
-
-        class ViewHolder(v: View) : RecyclerView.ViewHolder(v) {
-            val container: View = v.findViewById(R.id.msgContainer)
-            val tvText: TextView = v.findViewById(R.id.tvText)
-            val btnGood: Button = v.findViewById(R.id.btnGood)
-            val btnBad: Button = v.findViewById(R.id.btnBad)
-        }
     }
 }
