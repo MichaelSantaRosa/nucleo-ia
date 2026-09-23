@@ -2,6 +2,7 @@ package com.nucleo.ia
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -22,11 +23,11 @@ class MainActivity : AppCompatActivity() {
     private val messages = mutableListOf<Msg>()
     private lateinit var adapter: MsgAdapter
     private lateinit var etInput: EditText
-    private lateinit var btnSend: ImageButton
+    private lateinit var btnSend: Button
     private lateinit var tvStatus: TextView
     private lateinit var tvStats: TextView
 
-    data class Msg(val fromUser: Boolean, val text: String, val intentId: Int = -1)
+    data class Msg(val fromUser: Boolean, val text: String, val trainingText: String? = null, val intentId: Int = -1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,12 +60,12 @@ class MainActivity : AppCompatActivity() {
         etInput.setText("")
         addMsg(true, text)
         val (intent, reply) = engine.decide(text)
-        addMsg(false, "[${intent.label}] $reply", intent.id)
+        addMsg(false, "[${intent.label}] $reply", text, intent.id)
         updateStats()
     }
 
-    private fun addMsg(fromUser: Boolean, text: String, intentId: Int = -1) {
-        messages.add(Msg(fromUser, text, intentId))
+    private fun addMsg(fromUser: Boolean, text: String, trainingText: String? = null, intentId: Int = -1) {
+        messages.add(Msg(fromUser, text, trainingText, intentId))
         adapter.notifyItemInserted(messages.size - 1)
     }
 
@@ -102,10 +103,12 @@ class MainActivity : AppCompatActivity() {
             holder.btnGood.visibility = if (m.fromUser) View.GONE else View.VISIBLE
             holder.btnBad.visibility = if (m.fromUser) View.GONE else View.VISIBLE
             holder.btnGood.setOnClickListener {
-                if (m.intentId >= 0) { engine.feedback(m.text, m.intentId, true); updateStats() }
+                val trainText = m.trainingText ?: m.text
+                if (m.intentId >= 0) { engine.feedback(trainText, m.intentId, true); updateStats() }
             }
             holder.btnBad.setOnClickListener {
-                if (m.intentId >= 0) { engine.feedback(m.text, m.intentId, false); updateStats() }
+                val trainText = m.trainingText ?: m.text
+                if (m.intentId >= 0) { engine.feedback(trainText, m.intentId, false); updateStats() }
             }
         }
 

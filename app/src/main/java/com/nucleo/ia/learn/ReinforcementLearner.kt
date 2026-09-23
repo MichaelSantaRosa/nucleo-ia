@@ -1,13 +1,29 @@
 package com.nucleo.ia.learn
 
-class ReinforcementLearner(private val nActions: Int = 8, private val alpha: Float = 0.1f) {
-    private val q = Array(nActions) { FloatArray(4) }
-    private var lastState = 0
-    private fun stateOf(c: Float) = when { c < 0.3f -> 0; c < 0.5f -> 1; c < 0.7f -> 2; else -> 3 }
-    fun observe(action: Int, success: Boolean) {
-        val r = if (success) 1f else -1f
-        q[action][lastState] += alpha * (r - q[action][lastState])
+class ReinforcementLearner {
+
+    private val goodCounts = IntArray(8)
+    private val badCounts = IntArray(8)
+
+    fun record(intentId: Int, good: Boolean) {
+        if (intentId < 0 || intentId >= 8) return
+        if (good) goodCounts[intentId]++ else badCounts[intentId]++
     }
-    fun setState(c: Float) { lastState = stateOf(c) }
-    fun bestActionScore(a: Int): Float = q[a][lastState]
+
+    fun accuracy(): Float {
+        var totalGood = 0
+        var totalBad = 0
+        for (i in 0 until 8) {
+            totalGood += goodCounts[i]
+            totalBad += badCounts[i]
+        }
+        val total = totalGood + totalBad
+        if (total == 0) return 0.5f
+        return totalGood.toFloat() / total.toFloat()
+    }
+
+    fun reset() {
+        goodCounts.fill(0)
+        badCounts.fill(0)
+    }
 }

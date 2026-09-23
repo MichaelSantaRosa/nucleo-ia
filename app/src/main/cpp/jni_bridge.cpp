@@ -1,53 +1,71 @@
-#include "brain.h"
 #include <jni.h>
-#include <android/log.h>
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"NucleoBrain",__VA_ARGS__)
-static nucleo::Brain* g_brain=nullptr;
+#include "brain.h"
+
 extern "C" {
-JNIEXPORT jlong JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeCreate(JNIEnv*,jclass){
-    if(g_brain) delete g_brain;
-    g_brain=new nucleo::Brain();
-    LOGI("Brain criado: %zu bytes", g_brain->weightBytes());
-    return (jlong)g_brain;
+
+JNIEXPORT jlong JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeCreateBrain(
+    JNIEnv* env, jobject thiz,
+    jint vocabSize, jint seqLen, jint embedDim, jint ffDim, jint hiddenDim, jint numClasses) {
+    nucleo::BrainConfig cfg;
+    cfg.vocabSize = vocabSize;
+    cfg.seqLen = seqLen;
+    cfg.embedDim = embedDim;
+    cfg.ffDim = ffDim;
+    cfg.hidden = hiddenDim;
+    cfg.numClasses = numClasses;
+    auto* brain = new nucleo::Brain(cfg);
+    return (jlong)brain;
 }
-JNIEXPORT void JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeDestroy(JNIEnv*,jclass,jlong h){
-    delete (nucleo::Brain*)h; if(h==(jlong)g_brain) g_brain=nullptr;
+
+JNIEXPORT void JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeDestroyBrain(
+    JNIEnv* env, jobject thiz, jlong handle) {
+    auto* brain = reinterpret_cast<nucleo::Brain*>(handle);
+    delete brain;
 }
-JNIEXPORT jboolean JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeLoadWeights(
-        JNIEnv*env,jclass,jlong h,jbyteArray arr){
-    auto*b=(nucleo::Brain*)h; if(!b)return JNI_FALSE;
-    jsize n=env->GetArrayLength(arr);
-    jbyte*d=env->GetByteArrayElements(arr,nullptr);
-    bool ok=b->loadWeights((uint8_t*)d,n);
-    env->ReleaseByteArrayElements(arr,d,JNI_ABORT);
-    return ok?JNI_TRUE:JNI_FALSE;
+
+JNIEXPORT void JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeInfer(
+    JNIEnv* env, jobject thiz, jlong handle, jintArray ids, jfloatArray outScores) {
+    auto* brain = reinterpret_cast<nucleo::Brain*>(handle);
+    int len = env->GetArrayLength(ids);
+    std::vector<int32_t> idsVec(len);
+    env->GetIntArrayRegion(ids, 0, len, (int*)idsVec.data());
+    float* scores = env->GetFloatArrayElements(outScores, nullptr);
+    brain->forward(idsVec.data(), scores);
+    env->ReleaseFloatArrayElements(outScores, scores, JNI_COMMIT);
 }
-JNIEXPORT jbyteArray JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeSaveWeights(
-        JNIEnv*env,jclass,jlong h){
-    auto*b=(nucleo::Brain*)h; if(!b)return nullptr;
-    auto v=b->saveWeights();
-    jbyteArray a=env->NewByteArray((jsize)v.size());
-    env->SetByteArrayRegion(a,0,(jsize)v.size(),(const jbyte*)v.data());
-    return a;
+
+JNIEXPORT void JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeTrainStep(
+    JNIEnv* env, jobject thiz, jlong handle, jintArray ids, jint label, jfloat lr) {
+    auto* brain = reinterpret_cast<nucleo::Brain*>(handle);
+    int len = env->GetArrayLength(ids);
+    std::vector<int32_t> idsVec(len);
+    env->GetIntArrayRegion(ids, 0, len, (int*)idsVec.data());
+    brain->trainStep(idsVec.data(), label, (float)lr);
 }
-JNIEXPORT jfloatArray JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeForward(
-        JNIEnv*env,jclass,jlong h,jintArray ids){
-    auto*b=(nucleo::Brain*)h; if(!b)return nullptr;
-    jint*d=env->GetIntArrayElements(ids,nullptr);
-    float out[nucleo::NUM_CLASSES];
-    b->forward(d,out);
-    env->ReleaseIntArrayElements(ids,d,JNI_ABORT);
-    jfloatArray r=env->NewFloatArray(nucleo::NUM_CLASSES);
-    env->SetFloatArrayRegion(r,0,nucleo::NUM_CLASSES,out);
-    return r;
+
+JNIEXPORT jbyteArray JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeSaveWeights(
+    JNIEnv* env, jobject thiz, jlong handle) {
+    auto* brain = reinterpret_cast<nucleo::Brain*>(handle);
+    auto data = brain->saveWeights();
+    jbyteArray arr = env->NewByteArray(data.size());
+    env->SetByteArrayRegion(arr, 0, data.size(), (const jbyte*)data.data());
+    return arr;
 }
-JNIEXPORT void JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeTrainStep(
-        JNIEnv*env,jclass,jlong h,jintArray ids,jint label,jfloat lr){
-    auto*b=(nucleo::Brain*)h; if(!b)return;
-    jint*d=env->GetIntArrayElements(ids,nullptr);
-    b->trainStep(d,label,lr);
-    env->ReleaseIntArrayElements(ids,d,JNI_ABORT);
+
+JNIEXPORT jboolean JNICALL
+Java_com_nucleo_ia_NativeBridge_nativeLoadWeights(
+    JNIEnv* env, jobject thiz, jlong handle, jbyteArray data) {
+    auto* brain = reinterpret_cast<nucleo::Brain*>(handle);
+    int len = env->GetArrayLength(data);
+    jbyte* bytes = env->GetByteArrayElements(data, nullptr);
+    bool ok = brain->loadWeights((const uint8_t*)bytes, len);
+    env->ReleaseByteArrayElement(data, bytes, JNI_ABORT);
+    return ok ? JNI_TRUE : JNI_FALSE;
 }
-JNIEXPORT jlong JNICALL Java_com_nucleo_ia_core_NativeBridge_nativeWeightBytes(
-        JNIEnv*,jclass,jlong h){ auto*b=(nucleo::Brain*)h; return b?(jlong)b->weightBytes():0; }
+
 }

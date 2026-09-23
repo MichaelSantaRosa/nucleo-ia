@@ -77,8 +77,10 @@ class IaEngine(private val ctx: Context) {
     }
 
     fun destroy() {
+        if (handle == 0L) return
         persistWeights()
         NativeBridge.nativeDestroyBrain(handle)
+        handle = 0L
     }
 
     private fun buildReply(intent: Intent, text: String): String {
