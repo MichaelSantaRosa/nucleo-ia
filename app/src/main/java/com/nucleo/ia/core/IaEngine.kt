@@ -22,8 +22,8 @@ class IaEngine(context: Context) {
 
     init {
         try {
-            handle = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
-            Log.i("IaEngine", "Brain criado, handle=$handle")
+            handle = NativeBridge.nativeCreateBrain(4096, 32, 32, 64, 64, 8)
+            Log.i("IaEngine", "Brain criado (vocab=4096, seq=32), handle=$handle")
         } catch (e: Exception) {
             Log.e("IaEngine", "Falha ao criar brain", e)
         }
