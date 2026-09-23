@@ -24,8 +24,12 @@ class InternetManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("nucleo_prefs", Context.MODE_PRIVATE)
 
     init {
-        val saved = prefs.getString("internet_mode", "OFF")
-        mode = try { Mode.valueOf(saved) } catch (e: Exception) { Mode.OFF }
+        val saved = prefs.getString("internet_mode", Mode.OFF.name) ?: Mode.OFF.name
+        mode = try {
+    Mode.valueOf(saved)
+} catch (e: IllegalArgumentException) {
+    Mode.OFF
+}
     }
 
     fun isOnline(): Boolean {
