@@ -1,4 +1,4 @@
-﻿package com.nucleo.ia.db
+package com.nucleo.ia.db
 
 import android.content.ContentValues
 import android.content.Context

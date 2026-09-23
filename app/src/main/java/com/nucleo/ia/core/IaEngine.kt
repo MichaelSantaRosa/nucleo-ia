@@ -1,4 +1,4 @@
-﻿package com.nucleo.ia.core
+package com.nucleo.ia.core
 
 import android.content.Context
 import com.nucleo.ia.db.ExperienceStore

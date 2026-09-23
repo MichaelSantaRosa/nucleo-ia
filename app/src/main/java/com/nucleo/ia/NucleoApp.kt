@@ -1,4 +1,4 @@
-﻿package com.nucleo.ia
+package com.nucleo.ia
 
 import android.app.Application
 import com.nucleo.ia.core.IaEngine

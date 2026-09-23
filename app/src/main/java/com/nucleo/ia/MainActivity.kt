@@ -1,4 +1,4 @@
-﻿package com.nucleo.ia
+package com.nucleo.ia
 
 import android.os.Bundle
 import android.view.LayoutInflater

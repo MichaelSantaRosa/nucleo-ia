@@ -1,4 +1,4 @@
-﻿#include "brain.h"
+#include "brain.h"
 #include <cmath>
 #include <cstring>
 #include <random>
