@@ -37,8 +37,8 @@ struct Brain::Impl {
     std::vector<int8_t> ffUpq;
     std::vector<int8_t> ffDownq;
     std::vector<int8_t> clsWq;
-    std::vector<float> actUp;
-    std::vector<float> actHid;
+    mutable mutable mutable std::vector<float> actUp;
+    mutable mutable mutable std::vector<float> actHid;
     mutable std::vector<float> logits;
 
     void requantize() {
@@ -241,3 +241,5 @@ void Brain::trainStep(const int32_t* ids, int label, float lr) {
     }
     i.requantize();
 }
+
+}  // namespace nucleo
