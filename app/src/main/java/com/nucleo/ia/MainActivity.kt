@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSend: Button
     private lateinit var tvStatus: TextView
     private lateinit var tvStats: TextView
+    private lateinit var tvInternetStatus: TextView
     private lateinit var recycler: RecyclerView
     private lateinit var adapter: MessageAdapter
 
@@ -86,17 +87,23 @@ class MainActivity : AppCompatActivity() {
         btnSend = findViewById(R.id.btnSend)
         tvStatus = findViewById(R.id.tvStatus)
         tvStats = findViewById(R.id.tvStats)
+        tvInternetStatus = findViewById(R.id.tvInternetStatus)
         recycler = findViewById(R.id.recycler)
         adapter = MessageAdapter(::onFeedback)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
         val btnInternet = findViewById<Button>(R.id.btnInternet)
-        val tvInternetStatus = findViewById<TextView>(R.id.tvInternetStatus)
-        updateInternetLabel(btnInternet, tvInternetStatus)
+        updateInternetLabel(btnInternet)
         btnInternet.setOnClickListener {
             internetManager.cycleMode()
-            updateInternetLabel(btnInternet, tvInternetStatus)
+            updateInternetLabel(btnInternet)
+        }
+
+        internetManager.onConnectivityChanged = { online ->
+            runOnUiThread {
+                updateInternetStatusText(online)
+            }
         }
 
         btnSend.setOnClickListener {
@@ -118,6 +125,8 @@ class MainActivity : AppCompatActivity() {
                 askEngine(text)
             }
         }
+
+        updateInternetStatusText(internetManager.isOnline())
     }
 
     private fun askEngine(text: String) {
@@ -136,20 +145,24 @@ class MainActivity : AppCompatActivity() {
         updateStats()
     }
 
-    private fun updateInternetLabel(btn: Button, status: TextView) {
+    private fun updateInternetLabel(btn: Button) {
         when (internetManager.mode) {
-            InternetManager.Mode.ON -> {
-                btn.text = "\uD83C\uDF10 Internet: Ativada"
-                status.text = "Internet liberada"
-            }
-            InternetManager.Mode.OFF -> {
-                btn.text = "\uD83C\uDF10 Internet: Desativada"
-                status.text = "Modo offline"
-            }
-            InternetManager.Mode.ASK -> {
-                btn.text = "\uD83C\uDF10 Internet: Perguntar"
-                status.text = "Pergunta antes de acessar"
-            }
+            InternetManager.Mode.ON -> btn.text = "\uD83C\uDF10 Internet: Ativada"
+            InternetManager.Mode.OFF -> btn.text = "\uD83C\uDF10 Internet: Desativada"
+            InternetManager.Mode.ASK -> btn.text = "\uD83C\uDF10 Internet: Perguntar"
+        }
+    }
+
+    private fun updateInternetStatusText(online: Boolean) {
+        val modeText = when (internetManager.mode) {
+            InternetManager.Mode.ON -> "liberada"
+            InternetManager.Mode.OFF -> "desativada"
+            InternetManager.Mode.ASK -> "perguntar antes"
+        }
+        tvInternetStatus.text = if (online) {
+            "\u2705 Conectada ($modeText)"
+        } else {
+            "\u274C Sem conex\u00e3o ($modeText)"
         }
     }
 
@@ -161,6 +174,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        internetManager.stopMonitoring()
         engine.destroy()
     }
 }

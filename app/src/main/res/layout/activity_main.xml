@@ -1,5 +1,5 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -9,8 +9,8 @@
         android:id="@+id/tvTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nucleo IA - Offline"
-        android:textSize="18sp"
+        android:text="Nucleo IA"
+        android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
         android:paddingBottom="8dp" />
@@ -19,7 +19,7 @@
         android:id="@+id/tvStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nucleo ativo | Offline"
+        android:text="Pronto"
         android:textSize="12sp"
         android:gravity="center"
         android:paddingBottom="4dp" />
@@ -28,73 +28,68 @@
         android:id="@+id/tvStats"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Experiencias: 0 | Precisao RL: 0.0%"
+        android:text="Experi\u00eancias: 0 | Precis\u00e3o RL: 0%"
         android:textSize="11sp"
         android:gravity="center"
         android:paddingBottom="8dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
-
-            <LinearLayout
         android:id="@+id/layoutInternet"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="8dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Internet:"
-            android:textSize="14sp"/>
+        android:gravity="center"
+        android:paddingBottom="8dp">
 
         <Button
             android:id="@+id/btnInternet"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Desativada"
-            android:textSize="12sp"
-            android:minWidth="0dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"/>
+            android:text="\uD83C\uDF10 Internet: Desativada"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tvInternetStatus"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text=""
-            android:textSize="12sp"
-            android:gravity="end"/>
-
+            android:text="Modo offline"
+            android:textSize="11sp"
+            android:gravity="end"
+            android:paddingStart="8dp" />
     </LinearLayout>
 
-    <EditText
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
             android:id="@+id/etInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Digite sua mensagem..."
             android:inputType="text"
-            android:maxLines="1" />
+            android:maxLines="3"
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_user" />
 
         <Button
             android:id="@+id/btnSend"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Enviar" />
-
+            android:text="Enviar"
+            android:layout_marginStart="8dp" />
     </LinearLayout>
+
 </LinearLayout>
