@@ -1,4 +1,4 @@
-package com.nucleo.ia.learn
+﻿package com.nucleo.ia.learn
 
 class ReinforcementLearner(private val nActions: Int = 8, private val alpha: Float = 0.1f) {
     private val q = Array(nActions) { FloatArray(4) }

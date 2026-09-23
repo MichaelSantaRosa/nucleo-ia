@@ -1,4 +1,4 @@
-package com.nucleo.ia.core
+﻿package com.nucleo.ia.core
 
 object NativeBridge {
     init { System.loadLibrary("nucleo_brain") }
