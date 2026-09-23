@@ -39,6 +39,6 @@
                 android:src="@android:drawable/checkbox_off_background"
                 android:contentDescription="Ruim" />
 
-        >/LinearLayout>
-    >/LinearLayout>
->/LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
