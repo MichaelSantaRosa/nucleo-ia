@@ -64,7 +64,7 @@ Java_com_nucleo_ia_NativeBridge_nativeLoadWeights(
     int len = env->GetArrayLength(data);
     jbyte* bytes = env->GetByteArrayElements(data, nullptr);
     bool ok = brain->loadWeights((const uint8_t*)bytes, len);
-    env->ReleaseByteArrayElement(data, bytes, JNI_ABORT);
+    env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
     return ok ? JNI_TRUE : JNI_FALSE;
 }
 
