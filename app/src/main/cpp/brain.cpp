@@ -37,8 +37,8 @@ struct Brain::Impl {
     std::vector<int8_t> ffUpq;
     std::vector<int8_t> ffDownq;
     std::vector<int8_t> clsWq;
-    mutable mutable mutable std::vector<float> actUp;
-    mutable mutable mutable std::vector<float> actHid;
+    mutable std::vector<float> actUp;
+    mutable std::vector<float> actHid;
     mutable std::vector<float> logits;
 
     void requantize() {
