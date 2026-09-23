@@ -1,6 +1,7 @@
 package com.nucleo.ia.core
 
 import android.content.Context
+import android.util.Log
 
 enum class Intent(val id: Int, val label: String) {
     GREETING(0, "saudacao"),
@@ -17,37 +18,66 @@ class IaEngine(context: Context) {
 
     private val store = ExperienceStore(context)
     private val rl = ReinforcementLearner(context)
-    private var handle: Long = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
+    private var handle: Long = 0L
+
+    init {
+        try {
+            handle = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
+            Log.i("IaEngine", "Brain criado, handle=$handle")
+        } catch (e: Exception) {
+            Log.e("IaEngine", "Falha ao criar brain", e)
+        }
+    }
 
     var lastReply: String? = null
         private set
 
     fun decide(text: String): Intent {
-        val ids = Tokenizer.encode(text)
-        val scores = FloatArray(8)
-        NativeBridge.nativeInfer(handle, ids, scores)
-        var best = 0
-        for (i in 1 until scores.size) if (scores[i] > scores[best]) best = i
-        val intent = Intent.values()[best]
-        lastReply = buildReply(intent, text)
-        store.record(text, best, true)
-        return intent
+        if (handle == 0L) {
+            lastReply = "Motor n\u00e3o inicializado."
+            return Intent.UNKNOWN
+        }
+        return try {
+            val ids = Tokenizer.encode(text)
+            val scores = FloatArray(8)
+            NativeBridge.nativeInfer(handle, ids, scores)
+            var best = 0
+            for (i in 1 until scores.size) if (scores[i] > scores[best]) best = i
+            val intent = Intent.values()[best]
+            lastReply = buildReply(intent, text)
+            store.record(text, best, true)
+            intent
+        } catch (e: Exception) {
+            Log.e("IaEngine", "Falha em decide()", e)
+            lastReply = "Erro ao processar. Tente de novo."
+            Intent.UNKNOWN
+        }
     }
 
     fun feedback(text: String, intentId: Int, good: Boolean) {
-        rl.update(intentId, if (good) 1f else -1f)
-        val ids = Tokenizer.encode(text)
-        val wrong = (intentId + 1 + (Math.abs(text.length) % 6)) % 8
-        NativeBridge.nativeTrainStep(handle, ids, if (good) intentId else wrong, if (good) 0.01f else 0.02f)
-        store.record(text, intentId, good)
+        if (handle == 0L) return
+        try {
+            rl.update(intentId, if (good) 1f else -1f)
+            val ids = Tokenizer.encode(text)
+            val wrong = (intentId + 1 + (Math.abs(text.length) % 6)) % 8
+            NativeBridge.nativeTrainStep(handle, ids, if (good) intentId else wrong, if (good) 0.01f else 0.02f)
+            store.record(text, intentId, good)
+        } catch (e: Exception) {
+            Log.e("IaEngine", "Falha em feedback()", e)
+        }
     }
 
     fun trainOnIdle(steps: Int = 50, lr: Float = 0.01f) {
-        for (i in 0 until steps) {
-            val intentId = i % 8
-            val text = "amostra $i"
-            val ids = Tokenizer.encode(text)
-            NativeBridge.nativeTrainStep(handle, ids, intentId, lr)
+        if (handle == 0L) return
+        try {
+            for (i in 0 until steps) {
+                val intentId = i % 8
+                val text = "amostra $i"
+                val ids = Tokenizer.encode(text)
+                NativeBridge.nativeTrainStep(handle, ids, intentId, lr)
+            }
+        } catch (e: Exception) {
+            Log.e("IaEngine", "Falha em trainOnIdle()", e)
         }
     }
 
@@ -57,7 +87,11 @@ class IaEngine(context: Context) {
 
     fun destroy() {
         if (handle != 0L) {
-            NativeBridge.nativeDestroyBrain(handle)
+            try {
+                NativeBridge.nativeDestroyBrain(handle)
+            } catch (e: Exception) {
+                Log.e("IaEngine", "Falha em destroy()", e)
+            }
             handle = 0L
         }
     }
