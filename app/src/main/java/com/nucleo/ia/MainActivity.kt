@@ -16,6 +16,7 @@ data class Msg(val fromUser: Boolean, val text: String)
 class MainActivity : AppCompatActivity() {
     private val msgs = mutableListOf<Msg>()
     private lateinit var adapter: MsgAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -23,8 +24,8 @@ class MainActivity : AppCompatActivity() {
         rv.layoutManager = LinearLayoutManager(this)
         adapter = MsgAdapter(msgs)
         rv.adapter = adapter
+        val et = findViewById<EditText>(R.id.etInput)
         findViewById<Button>(R.id.btnSend).setOnClickListener {
-            val et = findViewById<EditText>(R.id.etInput)
             val text = et.text.toString().trim()
             if (text.isEmpty()) return@setOnClickListener
             msgs.add(Msg(true, text))
@@ -40,11 +41,14 @@ class MsgAdapter(private val items: List<Msg>) : RecyclerView.Adapter<MsgAdapter
     class VH(v: View) : RecyclerView.ViewHolder(v) {
         val tv: TextView = v.findViewById(android.R.id.text1)
     }
+
     override fun onCreateViewHolder(p: ViewGroup, t: Int) =
         VH(LayoutInflater.from(p.context).inflate(android.R.layout.simple_list_item_1, p, false))
+
     override fun onBindViewHolder(h: VH, p: Int) {
         val m = items[p]
         h.tv.text = (if (m.fromUser) "Voce: " else "IA: ") + m.text
     }
+
     override fun getItemCount() = items.size
 }

@@ -12,6 +12,7 @@ class IaEngine(private val ctx: Context) {
         CHITCHAT(3, "conversa"), THANKS(4, "agradecimento"),
         FAREWELL(5, "despedida"), COMMAND(6, "comando"), UNKNOWN(7, "desconhecido")
     }
+
     private var handle: Long = 0
     private lateinit var store: ExperienceStore
     private val rl = ReinforcementLearner()

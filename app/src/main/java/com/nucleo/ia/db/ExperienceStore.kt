@@ -12,6 +12,7 @@ class ExperienceStore(ctx: Context) {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, intent_id INTEGER, " +
                 "confidence REAL, success INTEGER, ts INTEGER)")
     }
+
     fun save(text: String, intentId: Int, conf: Float, success: Boolean) {
         val cv = ContentValues().apply {
             put("text", text); put("intent_id", intentId)
@@ -21,7 +22,8 @@ class ExperienceStore(ctx: Context) {
         db.insert("experience", null, cv)
         db.execSQL("DELETE FROM experience WHERE id NOT IN (SELECT id FROM experience ORDER BY ts DESC LIMIT 500)")
     }
-    fun recent(limit: Int): List<Experience> {
+
+    fun recent(limit: Int): MutableList<Experience> {
         val list = mutableListOf<Experience>()
         db.rawQuery("SELECT text,intent_id,confidence,success FROM experience ORDER BY ts DESC LIMIT $limit", null).use { c ->
             while (c.moveToNext()) {
