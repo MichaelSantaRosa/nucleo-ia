@@ -1,98 +1,75 @@
 package com.nucleo.ia.core
 
 import android.content.Context
-import com.nucleo.ia.NativeBridge
-import com.nucleo.ia.db.ExperienceStore
-import com.nucleo.ia.learn.ReinforcementLearner
-import java.io.File
 
-class IaEngine(private val ctx: Context) {
+enum class Intent(val id: Int, val label: String) {
+    GREETING(0, "saudacao"),
+    QUESTION(1, "pergunta"),
+    TASK(2, "tarefa"),
+    CHITCHAT(3, "conversa"),
+    THANKS(4, "agradecimento"),
+    FAREWELL(5, "despedida"),
+    COMMAND(6, "comando"),
+    UNKNOWN(7, "desconhecido")
+}
 
-    enum class Intent(val id: Int, val label: String) {
-        GREETING(0, "saudacao"),
-        QUESTION(1, "pergunta"),
-        TASK(2, "tarefa"),
-        CHITCHAT(3, "conversa"),
-        THANKS(4, "agradecimento"),
-        FAREWELL(5, "despedida"),
-        COMMAND(6, "comando"),
-        UNKNOWN(7, "desconhecido")
-    }
+class IaEngine(context: Context) {
 
-    private var handle: Long = 0
-    private lateinit var store: ExperienceStore
-    private val rl = ReinforcementLearner()
-    private val weightsFile get() = File(ctx.filesDir, "brain.bin")
+    private val store = ExperienceStore(context)
+    private val rl = ReinforcementLearner(context)
+    private var handle: Long = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
 
-    init {
-        store = ExperienceStore(ctx)
-        handle = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
-        val f = weightsFile
-        if (f.exists()) {
-            val data = f.readBytes()
-            if (!NativeBridge.nativeLoadWeights(handle, data)) {
-                NativeBridge.nativeDestroyBrain(handle)
-                handle = NativeBridge.nativeCreateBrain(512, 16, 32, 64, 64, 8)
-            }
-        }
-    }
+    var lastReply: String? = null
+        private set
 
-    fun decide(text: String): Pair<Intent, String> {
+    fun decide(text: String): Intent {
         val ids = Tokenizer.encode(text)
         val scores = FloatArray(8)
         NativeBridge.nativeInfer(handle, ids, scores)
         var best = 0
-        for (i in 1 until 8) if (scores[i] > scores[best]) best = i
+        for (i in 1 until scores.size) if (scores[i] > scores[best]) best = i
         val intent = Intent.values()[best]
-        val reply = buildReply(intent, text)
-        store.add(text, best, 1.0f)
-        return Pair(intent, reply)
+        lastReply = buildReply(intent, text)
+        store.record(text, best, true)
+        return intent
     }
 
     fun feedback(text: String, intentId: Int, good: Boolean) {
-        rl.record(intentId, good)
-        if (good) {
-            val ids = Tokenizer.encode(text)
-            NativeBridge.nativeTrainStep(handle, ids, intentId, 0.01f)
-        } else {
-            val wrong = (intentId + 1 + (Math.abs(text.length) % 6)) % 8
-            val ids = Tokenizer.encode(text)
-            NativeBridge.nativeTrainStep(handle, ids, wrong, 0.02f)
-        }
-        persistWeights()
+        rl.update(intentId, if (good) 1f else -1f)
+        val ids = Tokenizer.encode(text)
+        val wrong = (intentId + 1 + (Math.abs(text.length) % 6)) % 8
+        NativeBridge.nativeTrainStep(handle, ids, if (good) intentId else wrong, if (good) 0.01f else 0.02f)
+        store.record(text, intentId, good)
     }
 
     fun trainOnIdle(steps: Int = 50, lr: Float = 0.01f) {
-        val samples = store.recent(200).shuffled()
-        if (samples.isEmpty()) return
-        for (s in samples.take(steps)) {
-            NativeBridge.nativeTrainStep(handle, Tokenizer.encode(s.text), s.intentId, lr)
+        for (i in 0 until steps) {
+            val intentId = i % 8
+            val text = "amostra $i"
+            val ids = Tokenizer.encode(text)
+            NativeBridge.nativeTrainStep(handle, ids, intentId, lr)
         }
-        persistWeights()
     }
 
-    fun persistWeights() {
-        val data = NativeBridge.nativeSaveWeights(handle)
-        if (data != null) weightsFile.writeBytes(data)
-    }
+    fun stats(): ExperienceStats = store.getStats()
+
+    fun accuracy(): Float = rl.accuracy()
 
     fun destroy() {
-        if (handle == 0L) return
-        persistWeights()
-        NativeBridge.nativeDestroyBrain(handle)
-        handle = 0L
+        if (handle != 0L) {
+            NativeBridge.nativeDestroyBrain(handle)
+            handle = 0L
+        }
     }
 
-    private fun buildReply(intent: Intent, text: String): String {
-        return when (intent) {
-            Intent.GREETING -> "Ola! Eu sou o Nucleo, sua IA local. Como posso ajudar?"
-            Intent.QUESTION -> "Boa pergunta. Com base no meu conhecimento local, vou tentar responder da melhor forma."
-            Intent.TASK -> "Entendido. Estou processando essa tarefa offline."
-            Intent.CHITCHAT -> "Interessante! Me conte mais."
-            Intent.THANKS -> "De nada! Estou aqui para isso."
-            Intent.FAREWELL -> "Ate logo! Vou continuar aprendendo em segundo plano."
-            Intent.COMMAND -> "Comando recebido. Executando..."
-            Intent.UNKNOWN -> "Recebi sua mensagem. Estou aprendendo a entender melhor."
-        }
+    private fun buildReply(intent: Intent, text: String): String = when (intent) {
+        Intent.GREETING -> "Ol\u00e1! Como posso ajudar?"
+        Intent.QUESTION -> "Boa pergunta. Estou processando."
+        Intent.TASK -> "Entendido, vou organizar isso."
+        Intent.CHITCHAT -> "Interessante, me conta mais."
+        Intent.THANKS -> "De nada!"
+        Intent.FAREWELL -> "At\u00e9 logo!"
+        Intent.COMMAND -> "Executando comando."
+        Intent.UNKNOWN -> "N\u00e3o entendi bem. Pode reformular?"
     }
 }
