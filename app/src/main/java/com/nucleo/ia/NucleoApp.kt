@@ -12,7 +12,7 @@ class NucleoApp : Application() {
         super.onCreate()
         engine = IaEngine(this)
         connectivity = ConnectivityModule(this)
-        engine.init()
+        
         connectivity.startMonitoring()
         IdleTrainingService.scheduleNext(this)
     }
