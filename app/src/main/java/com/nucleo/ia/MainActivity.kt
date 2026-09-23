@@ -1,9 +1,13 @@
 package com.nucleo.ia
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -80,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             text.contains("wikipedia", ignoreCase = true)
 
         if (needsInternet && internetManager.mode == InternetManager.Mode.ASK) {
-            android.app.AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Acesso à Internet")
                 .setMessage("Esta tarefa precisa da internet. Permitir?")
                 .setPositiveButton("Sim", null)
@@ -107,5 +111,48 @@ class MainActivity : AppCompatActivity() {
     private fun updateStats() {
         val stats = store.getStats()
         tvStats.text = "Acertos: ${stats.success} | Falhas: ${stats.fail} | Total: ${stats.total}"
+    }
+
+    // Adapter para o RecyclerView
+    inner class MessageAdapter : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
+
+        private val messages = mutableListOf<Pair<String, Boolean>>()
+
+        fun addMessage(text: String, isUser: Boolean) {
+            messages.add(Pair(text, isUser))
+            notifyItemInserted(messages.size - 1)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_msg, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val (text, isUser) = messages[position]
+            holder.bind(text, isUser)
+        }
+
+        override fun getItemCount(): Int = messages.size
+
+        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private val tvText: TextView = itemView.findViewById(R.id.tvText)
+            private val btnGood: Button = itemView.findViewById(R.id.btnGood)
+            private val btnBad: Button = itemView.findViewById(R.id.btnBad)
+
+            fun bind(text: String, isUser: Boolean) {
+                tvText.text = text
+                if (isUser) {
+                    itemView.setBackgroundResource(R.drawable.bg_user)
+                    btnGood.visibility = View.GONE
+                    btnBad.visibility = View.GONE
+                } else {
+                    itemView.setBackgroundResource(R.drawable.bg_bot)
+                    btnGood.visibility = View.VISIBLE
+                    btnBad.visibility = View.VISIBLE
+                }
+            }
+        }
     }
 }
