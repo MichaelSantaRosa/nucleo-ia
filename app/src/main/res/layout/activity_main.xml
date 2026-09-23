@@ -46,7 +46,42 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <EditText
+            <LinearLayout
+        android:id="@+id/layoutInternet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Internet:"
+            android:textSize="14sp"/>
+
+        <Button
+            android:id="@+id/btnInternet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Desativada"
+            android:textSize="12sp"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/tvInternetStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textSize="12sp"
+            android:gravity="end"/>
+
+    </LinearLayout>
+
+    <EditText
             android:id="@+id/etInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

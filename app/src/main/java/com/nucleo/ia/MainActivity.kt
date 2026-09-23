@@ -1,5 +1,7 @@
 package com.nucleo.ia
 
+import com.nucleo.ia.services.InternetManager
+
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -17,6 +19,7 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var internetManager: InternetManager
     private lateinit var engine: IaEngine
     private lateinit var store: ExperienceStore
     private lateinit var rl: ReinforcementLearner
@@ -47,6 +50,21 @@ class MainActivity : AppCompatActivity() {
         adapter = MsgAdapter()
         rv.adapter = adapter
 
+                val btnInternet = findViewById<Button>(R.id.btnInternet)
+        val tvInternetStatus = findViewById<TextView>(R.id.tvInternetStatus)
+        btnInternet.setOnClickListener {
+            internetManager.mode = when (internetManager.mode) {
+                InternetManager.Mode.OFF -> InternetManager.Mode.ON
+                InternetManager.Mode.ON -> InternetManager.Mode.ASK
+                InternetManager.Mode.ASK -> InternetManager.Mode.OFF
+            }
+            when (internetManager.mode) {
+                InternetManager.Mode.ON -> btnInternet.text = "Ativada"
+                InternetManager.Mode.OFF -> btnInternet.text = "Desativada"
+                InternetManager.Mode.ASK -> btnInternet.text = "Perguntar"
+            }
+            tvInternetStatus.text = ""
+        }
         btnSend.setOnClickListener { send() }
         etInput.setOnEditorActionListener { _, _, _ -> send(); true }
 
@@ -55,7 +73,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun send() {
-        val text = etInput.text.toString().trim()
+                        val text = etInput.text.toString().trim()
+        if (text.isEmpty()) return@setOnClickListener
+        // Verifica se precisa de internet
+        val needsInternet = text.contains("pesquis", "true") || text.contains("busca", "true") || text.contains("google", "true") || text.contains("wikipedia", "true")
+        if (needsInternet && internetManager.mode == InternetManager.Mode.ASK) {
+            val answer = android.app.AlertDialog.Builder(this)
+                .setTitle("Acesso à Internet")
+                .setMessage("Esta tarefa precisa da internet. Permitir?")
+                .setPositiveButton("Sim", null)
+                .setNegativeButton("Não", null)
+                .show()
+            // Simplificado: se o usuário não permitir, continua offline
+        }
+        if (text.isEmpty()) return@setOnClickListener
+        // Verifica se precisa de internet
+        val needsInternet = text.contains("pesquis", "true") || text.contains("busca", "true") || text.contains("google", "true") || text.contains("wikipedia", "true")
+        if (needsInternet && internetManager.mode == InternetManager.Mode.ASK) {
+            val answer = android.app.AlertDialog.Builder(this)
+                .setTitle("Acesso à Internet")
+                .setMessage("Esta tarefa precisa da internet. Permitir?")
+                .setPositiveButton("Sim", null)
+                .setNegativeButton("Não", null)
+                .show()
+            // Simplificado: se o usuário não permitir, continua offline
+        }
         if (text.isEmpty()) return
         etInput.setText("")
         addMsg(true, text)
