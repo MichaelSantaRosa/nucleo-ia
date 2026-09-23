@@ -2,7 +2,7 @@ package com.nucleo.ia
 
 object NativeBridge {
     init {
-        System.loadLibrary("nucleo")
+        System.loadLibrary("nucleo_brain")
     }
 
     external fun nativeCreateBrain(
