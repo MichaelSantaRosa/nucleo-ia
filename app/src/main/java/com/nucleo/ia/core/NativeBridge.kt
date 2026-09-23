@@ -1,12 +1,35 @@
 package com.nucleo.ia.core
 
-object NativeBridge {
-    init { System.loadLibrary("nucleo_brain") }
-    external fun nativeCreate(): Long
-    external fun nativeDestroy(h: Long)
-    external fun nativeLoadWeights(h: Long, arr: ByteArray): Boolean
-    external fun nativeSaveWeights(h: Long): ByteArray
-    external fun nativeForward(h: Long, ids: IntArray): FloatArray
-    external fun nativeTrainStep(h: Long, ids: IntArray, label: Int, lr: Float)
-    external fun nativeWeightBytes(h: Long): Long
+internal object NativeBridge {
+    init {
+        System.loadLibrary("nucleo_brain")
+    }
+
+    external fun nativeCreateBrain(
+        vocabSize: Int,
+        seqLen: Int,
+        embedDim: Int,
+        ffDim: Int,
+        hidden: Int,
+        numClasses: Int
+    ): Long
+
+    external fun nativeInfer(
+        handle: Long,
+        tokenIds: IntArray,
+        scores: FloatArray
+    )
+
+    external fun nativeTrainStep(
+        handle: Long,
+        tokenIds: IntArray,
+        target: Int,
+        learningRate: Float
+    )
+
+    external fun nativeDestroyBrain(handle: Long)
+
+    external fun nativeSaveWeights(handle: Long, path: String): Boolean
+
+    external fun nativeLoadWeights(handle: Long, path: String): Boolean
 }
